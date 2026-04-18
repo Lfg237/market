@@ -1,287 +1,229 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!DOCTYPE html><html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Assistant LesFacilitateurs</title>
-<style>
-:root{--bg:#0b1220;--card:#0f1a2b;--accent:#2563eb;--accent2:#10b981;--muted:rgba(255,255,255,0.06);}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#e6eef8;}
-#botFloat{position:fixed;right:20px;bottom:20px;width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1100;}
-#botFloat img{width:60%;height:60%;}
-#botBox{position:fixed;right:0;bottom:0;width:100%;max-width:420px;height:90vh;background:var(--card);border-radius:12px 12px 0 0;display:none;flex-direction:column;overflow:hidden;z-index:1200;box-shadow:0 -8px 30px rgba(0,0,0,0.6);}
-#botHead{display:flex;align-items:center;gap:8px;padding:10px;background:var(--accent);}
-#botHead .title{font-weight:700;}
-#botBody{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
-.premiumOptions{display:block;padding:6px;background:rgba(255,255,255,0.03);border-radius:8px;}
-.premiumOption{padding:10px;border-radius:8px;background:var(--accent2);color:white;font-weight:700;cursor:pointer;margin-bottom:6px;text-align:center;}
-.recordList{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto;padding:6px;border-radius:8px;}
-.record{background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;}
-.record .meta{line-height:1.1;}
-.record .contact{filter:blur(6px);user-select:none;opacity:0.9;}
-.record .contact.revealed{filter:none;color:var(--accent2);font-weight:700;opacity:1;}
-.btn{padding:6px 8px;border-radius:6px;border:none;background:var(--accent);color:white;cursor:pointer;font-weight:700;}
-.btn.pay{background:#f59e0b;}
-#paymentModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1400;align-items:center;justify-content:center;}
-#paymentCard{background:#122033;padding:16px;border-radius:12px;width:92%;max-width:420px;display:flex;flex-direction:column;gap:8px;}
-input,textarea{padding:8px;border-radius:6px;border:none;background:rgba(255,255,255,0.03);color:white;outline:none;width:100%;}
-small.note{color:#cfd8e3;opacity:0.8}
-.reason{color:#ffb4b4;font-weight:700}
-footer.bar{padding:10px;background:transparent;display:flex;gap:8px;align-items:center;}
-</style>
-</head>
-<body>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutique E-commerce Pro</title><style>
+*{box-sizing:border-box;}
 
-<div id="botFloat" title="Ouvrir le bot">
-  <img src="https://i.ibb.co/4JH0qZt/african-head.png" alt="bot">
-</div>
-
-<div id="botBox">
-  <div id="botHead">
-    <div class="title">🤵🏿 LesFacilitateurs</div>
-    <input id="adminCode" type="password" placeholder="Code admin">
-    <button id="adminValidateBtn" class="btn">Valider</button>
-  </div>
-
-  <div id="botBody">
-    <div class="premiumOptions">
-      <div class="premiumOption" data-type="emploi">💼 Emploi</div>
-      <div class="premiumOption" data-type="marketing">📈 Marketing / Pub</div>
-      <div class="premiumOption" data-type="rencontre">❤️ Rencontre Célibataire</div>
-      <div class="premiumOption" data-type="formation">🎓 Formation</div>
-      <div class="premiumOption" id="registerBtn">📝 S'inscrire / Payer 100 FCFA</div>
-    </div>
-    <div id="recordsHost" class="recordList">
-      <div style="opacity:0.6">Les profils payants s'afficheront ici.</div>
-    </div>
-  </div>
-
-  <footer class="bar">
-    <input id="botInput" type="text" placeholder="Écris ton message...">
-    <button id="sendBtn" class="btn">Envoyer</button>
-  </footer>
-</div>
-
-<!-- Modal paiement / inscription -->
-<div id="paymentModal">
-  <div id="paymentCard">
-    <div><strong>💳 Paiement / Inscription — 100 FCFA</strong></div>
-    <div><small class="note">Bénéficiaire: Loveline Wirnkar — OM: 640647072 / MoMo: 676353859</small></div>
-
-    <input id="txInput" type="text" placeholder="Copier-coller le message mobile money">
-    <div id="paymentFeedback" class="reason" style="min-height:18px"></div>
-
-    <input id="regName" type="text" placeholder="Nom complet (obligatoire)">
-    <input id="regAge" type="number" placeholder="Âge">
-    <input id="regCity" type="text" placeholder="Ville">
-    <input id="regQuartier" type="text" placeholder="Quartier">
-    <input id="regSex" type="text" placeholder="Sexe (Homme/Femme)">
-    <input id="regOrientation" type="text" placeholder="Orientation sexuelle (Hétéro/Bi/Homo)">
-    <input id="regDiplome" type="text" placeholder="Dernier diplôme">
-    <input id="regProfession" type="text" placeholder="Profession">
-    <input id="regPhone" type="text" placeholder="Numéro de téléphone">
-    <input id="regPhoto" type="file" accept="image/*">
-
-    <div style="display:flex;gap:8px;margin-top:6px;">
-      <button id="confirmPaymentBtn" class="btn pay">Valider</button>
-      <button id="cancelPaymentBtn" class="btn">Annuler</button>
-    </div>
-    <small class="note">Le paiement valide ou le code admin (233233) débloque l'accès.</small>
-  </div>
-</div>
-
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-const supabaseUrl = 'https://ycotvgvevyfyqflicmtw.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3R2Z3ZldnlmeXFmbGljbXR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxMTQxMzIsImV4cCI6MjA3NTY5MDEzMn0.Yyod-LWZVv5t5PggZ1EZm83vgkvHgaJd2QFJe4_vMDQ'
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-const botFloat = document.getElementById('botFloat')
-const botBox = document.getElementById('botBox')
-const registerBtn = document.getElementById('registerBtn')
-const paymentModal = document.getElementById('paymentModal')
-const txInput = document.getElementById('txInput')
-const paymentFeedback = document.getElementById('paymentFeedback')
-const confirmPaymentBtn = document.getElementById('confirmPaymentBtn')
-const cancelPaymentBtn = document.getElementById('cancelPaymentBtn')
-const adminCodeInput = document.getElementById('adminCode')
-const adminValidateBtn = document.getElementById('adminValidateBtn')
-const recordsHost = document.getElementById('recordsHost')
-
-// Champs inscription
-const regFields = {
-  name: document.getElementById('regName'),
-  age: document.getElementById('regAge'),
-  city: document.getElementById('regCity'),
-  quartier: document.getElementById('regQuartier'),
-  sex: document.getElementById('regSex'),
-  orientation: document.getElementById('regOrientation'),
-  diplome: document.getElementById('regDiplome'),
-  profession: document.getElementById('regProfession'),
-  phone: document.getElementById('regPhone'),
-  photo: document.getElementById('regPhoto')
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0b1220;
+color:white;
 }
 
-// --- Show/hide bot ---
-botFloat.addEventListener('click', () => {
-  botBox.style.display = botBox.style.display === 'flex' ? 'none' : 'flex';
-});
-
-// --- Show modal inscription/paiement ---
-registerBtn.addEventListener('click', () => {
-  paymentModal.style.display = 'flex';
-  txInput.value = '';
-  paymentFeedback.textContent = '';
-});
-
-// --- Cancel modal ---
-cancelPaymentBtn.addEventListener('click', () => {
-  paymentModal.style.display = 'none';
-});
-
-// --- Validate transaction ---
-const BENEF = { nom: 'Loveline Wirnkar', numbers: ['640647072','676353859'] };
-const usedTxMessages = new Set();
-
-function validateTx(msg) {
-  const text = msg.trim();
-  if (text === '233233') return { ok: true, method: 'admin-code' };
-  if (usedTxMessages.has(text)) return { ok: false, reason: 'Transaction déjà utilisée' };
-
-  const txIdMatch = text.match(/transaction Id:\s*(\d+)/i);
-  if (!txIdMatch) return { ok: false, reason: 'Transaction Id introuvable' };
-  const txId = txIdMatch[1];
-
-  const normalized = text.toLowerCase();
-  const nameOk = normalized.includes('loveline') || normalized.includes('wirnkar');
-  const numberOk = BENEF.numbers.some(n => normalized.includes(n));
-  if (!nameOk || !numberOk) return { ok: false, reason: 'Nom ou numéro du bénéficiaire incorrect' };
-
-  const dateMatch = text.match(/(\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2})/);
-  if (!dateMatch) return { ok: false, reason: 'Date/heure absente' };
-  const txDate = new Date(dateMatch[1]);
-  const diffMin = (Date.now() - txDate.getTime()) / (1000 * 60);
-  if (diffMin > 10) return { ok: false, reason: `Transaction trop ancienne (${Math.floor(diffMin)} min)` };
-
-  usedTxMessages.add(text);
-  return { ok: true, method: 'mobile-money', txId };
+header{
+position:sticky;
+top:0;
+background:#0a0f1a;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px 12px;
+z-index:1000;
+border-bottom:1px solid #1f2a44;
 }
 
-// --- Confirm payment / registration ---
-confirmPaymentBtn.addEventListener('click', async () => {
-  const res = validateTx(txInput.value);
-  if (!res.ok) {
-    paymentFeedback.textContent = res.reason;
-    return;
-  }
+.menu-btn{font-size:22px;cursor:pointer;}
+#time{font-size:13px;opacity:0.9;}
 
-  // Vérifier champ obligatoire
-  if (!regFields.name.value.trim()) {
-    paymentFeedback.textContent = 'Le nom est obligatoire.';
-    return;
-  }
-
-  // Préparer données
-  const formData = {
-    name: regFields.name.value.trim(),
-    age: regFields.age.value || null,
-    city: regFields.city.value || null,
-    quartier: regFields.quartier.value || null,
-    sex: regFields.sex.value || null,
-    orientation: regFields.orientation.value || null,
-    diplome: regFields.diplome.value || null,
-    profession: regFields.profession.value || null,
-    phone: regFields.phone.value || null,
-    paid: true,
-    created_at: new Date().toISOString()
-  };
-
-  // Upload photo si existante
-  if (regFields.photo.files.length > 0) {
-    const file = regFields.photo.files[0];
-    const { data, error } = await supabase.storage
-      .from('user-photos')
-      .upload(`photos/${Date.now()}_${file.name}`, file);
-    if (!error) {
-      formData.photo_url = data.path;
-    }
-  }
-
-  // Insérer dans Supabase
-  const { error } = await supabase.from('users').insert([formData]);
-  if (error) {
-    paymentFeedback.textContent = 'Erreur inscription: ' + error.message;
-    return;
-  }
-
-  paymentModal.style.display = 'none';
-  alert('Inscription réussie !');
-  loadUsers(); // recharge la liste après inscription
-});
-
-// --- Load & display users payants ---
-async function loadUsers() {
-  const { data: users, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('paid', true)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    recordsHost.innerHTML = `<div class="reason">Erreur chargement: ${error.message}</div>`;
-    return;
-  }
-
-  recordsHost.innerHTML = '';
-  users.forEach(user => {
-    const div = document.createElement('div');
-    div.className = 'record';
-    div.innerHTML = `
-      <div class="meta">
-        <strong>${user.name}</strong><br>
-        ${user.age || '-'} ans — ${user.city || '-'}, ${user.quartier || '-'}<br>
-        ${user.sex || '-'} — ${user.orientation || '-'}<br>
-        ${user.diplome || '-'} — ${user.profession || '-'}
-      </div>
-      <div>
-        <span class="contact">******</span>
-        <button class="btn pay">Voir numéro</button>
-        <button class="btn" style="background:red">Supprimer</button>
-      </div>
-    `;
-
-    // Bouton voir numéro
-    const btnVoir = div.querySelector('.btn.pay');
-    btnVoir.onclick = () => {
-      const tx = prompt('Entrez le message de paiement ou code admin:');
-      const res = validateTx(tx);
-      if (res.ok) div.querySelector('.contact').textContent = user.phone || 'Non renseigné';
-      else alert(res.reason);
-    };
-
-    // Bouton supprimer (admin)
-    const btnSuppr = div.querySelector('button[style]');
-    btnSuppr.onclick = async () => {
-      const code = prompt('Code admin requis pour supprimer:');
-      if (code !== '233233') { alert('Code incorrect'); return; }
-      const { error } = await supabase.from('users').delete().eq('id', user.id);
-      if (error) alert('Erreur suppression: ' + error.message);
-      else div.remove();
-    };
-
-    recordsHost.appendChild(div);
-  });
+.menu{
+position:fixed;
+top:0;
+left:-260px;
+width:260px;
+height:100%;
+background:#0a0f1a;
+padding:20px;
+transition:0.3s;
 }
 
-// --- Admin code validation ---
-adminValidateBtn.addEventListener('click', () => {
-  if (adminCodeInput.value === '233233') alert('Accès admin validé !');
-  else alert('Code incorrect !');
-});
+.menu a{
+display:block;
+color:white;
+text-decoration:none;
+padding:10px 0;
+border-bottom:1px solid #1f2a44;
+}
 
-// Charger la liste au démarrage
-loadUsers();
-</script>
-</body>
+.menu.active{left:0;}
+
+.banner{
+overflow:hidden;
+white-space:nowrap;
+background:#111a2e;
+padding:10px 0;
+border-bottom:1px solid #1f2a44;
+}
+
+.banner span{
+display:inline-block;
+padding-left:100%;
+animation:scroll 12s linear infinite;
+font-weight:bold;
+color:#22c55e;
+}
+
+@keyframes scroll{
+0%{transform:translateX(0%);}
+100%{transform:translateX(-100%);}
+}
+
+.section{padding:15px;}
+.section h2{font-size:16px;margin-bottom:10px;}
+
+.carousel{
+display:flex;
+overflow-x:auto;
+gap:12px;
+padding-bottom:10px;
+}
+
+.card{
+min-width:180px;
+max-width:180px;
+background:#121a2b;
+border-radius:12px;
+overflow:hidden;
+flex-shrink:0;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+
+.card img{
+width:100%;
+height:130px;
+object-fit:cover;
+}
+
+.card-content{padding:10px;}
+
+.title{font-size:14px;margin:4px 0;font-weight:bold;}
+.desc{font-size:12px;opacity:0.85;margin:4px 0;line-height:1.3;}
+.price{color:#22c55e;font-size:13px;font-weight:bold;margin:4px 0;}
+
+button{
+width:100%;
+padding:7px;
+font-size:12px;
+background:#25D366;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer;
+margin-top:6px;
+}
+
+button:hover{background:#1fb655;}
+
+footer{
+text-align:center;
+padding:20px;
+background:#0a0f1a;
+margin-top:20px;
+font-size:12px;
+opacity:0.8;
+}
+</style></head><body><header>
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div>BOUTIQUE EN LIGNE À VENDRE</div>
+<div id="time"></div>
+</header><div class="banner">
+<span>🔥 PROMO EXCEPTIONNELLE - SITE À VENDRE - CONTACT WHATSAPP +237670035609 🔥</span>
+</div><div class="menu" id="menu">
+<a href="https://google.com" target="_blank">Google</a>
+<a href="https://facebook.com" target="_blank">Facebook</a>
+<a href="https://whatsapp.com" target="_blank">WhatsApp</a>
+</div><!-- PREMIUM --><div class="section">
+<h2>💎 Premium</h2>
+<div class="carousel"><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Produit Premium</div>
+<div class="desc">Qualité supérieure et design moderne</div>
+<div class="price">5000 FCFA</div>
+<button onclick="buy('Produit Premium','5000 FCFA','Qualité supérieure','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Produit VIP</div>
+<div class="desc">Version haut de gamme</div>
+<div class="price">8000 FCFA</div>
+<button onclick="buy('Produit VIP','8000 FCFA','Version haut de gamme','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Produit Premium 3</div>
+<div class="desc">Produit haut niveau qualité pro</div>
+<div class="price">6500 FCFA</div>
+<button onclick="buy('Produit Premium 3','6500 FCFA','Produit haut niveau qualité pro','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div></div>
+</div><!-- PROMO --><div class="section">
+<h2>🔥 Promo</h2>
+<div class="carousel"><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Promo 1</div>
+<div class="desc">Offre spéciale limitée</div>
+<div class="price">3000 FCFA</div>
+<button onclick="buy('Promo 1','3000 FCFA','Offre spéciale limitée','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Promo 2</div>
+<div class="desc">Réduction exceptionnelle</div>
+<div class="price">3500 FCFA</div>
+<button onclick="buy('Promo 2','3500 FCFA','Réduction exceptionnelle','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Promo 3</div>
+<div class="desc">Stock limité</div>
+<div class="price">2800 FCFA</div>
+<button onclick="buy('Promo 3','2800 FCFA','Stock limité','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div></div>
+</div><!-- SOLDE --><div class="section">
+<h2>💸 Soldes</h2>
+<div class="carousel"><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Solde 1</div>
+<div class="desc">Dernière chance</div>
+<div class="price">2000 FCFA</div>
+<button onclick="buy('Solde 1','2000 FCFA','Dernière chance','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Solde 2</div>
+<div class="desc">Prix cassé</div>
+<div class="price">1500 FCFA</div>
+<button onclick="buy('Solde 2','1500 FCFA','Prix cassé','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div><div class="card">
+<img src="https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg">
+<div class="card-content">
+<div class="title">Solde 3</div>
+<div class="desc">Fin de stock</div>
+<div class="price">1800 FCFA</div>
+<button onclick="buy('Solde 3','1800 FCFA','Fin de stock','https://raw.githubusercontent.com/Lfg237/m-dias/main/affiche_compressee.jpg')">WhatsApp</button>
+</div>
+</div></div>
+</div><footer>
+© 2026 Boutique Pro à vendre | WhatsApp +237670035609
+</footer><script>
+function toggleMenu(){document.getElementById("menu").classList.toggle("active");}
+function updateTime(){document.getElementById("time").innerText=new Date().toLocaleTimeString();}
+setInterval(updateTime,1000);updateTime();
+
+function buy(name,price,desc,image){
+let msg=`🛒 COMMANDE PRODUIT\n\n📌 Nom: ${name}\n💰 Prix: ${price}\n📝 Description: ${desc}\n🖼️ Image: ${image}`;
+window.open(`https://wa.me/237670035609?text=${encodeURIComponent(msg)}`,'_blank');
+}
+</script></body>
 </html>
