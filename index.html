@@ -176,12 +176,20 @@ cursor:pointer;
 <script>
 
 function whatsapp(id){
-let msg=`🛒 COMMANDE PRODUIT\n\n📌 Produit: Image ${id}\n🔢 Code: X${id}\n📞 WhatsApp: +237670035609`;
-window.open("https://wa.me/237670035609?text="+encodeURIComponent(msg),'_blank');
+let msg=`🛒 COMMANDE PRODUIT
+
+📌 Produit: Image ${id}
+📞 WhatsApp: +237670035609`;
+
+window.open(
+"https://wa.me/237670035609?text="+encodeURIComponent(msg),
+"_blank"
+);
 }
 
 function downloadImg(id,url){
 let code = prompt("Entrez le code (X"+id+")");
+
 if(code === "X"+id){
 let a=document.createElement("a");
 a.href=url;
